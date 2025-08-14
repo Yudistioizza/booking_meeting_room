@@ -21,4 +21,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 });
 
+Route::get('/login/azure', [AzureAuthController::class, 'redirectToProvider'])->name('login.azure');
+Route::get('/login/azure/callback', [AzureAuthController::class, 'handleProviderCallback']);
+
 require __DIR__.'/auth.php';
