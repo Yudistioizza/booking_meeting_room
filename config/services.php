@@ -39,7 +39,25 @@ return [
         'client_id' => env('AZURE_CLIENT_ID'),
         'client_secret' => env('AZURE_CLIENT_SECRET'),
         'redirect' => env('AZURE_REDIRECT_URI'),
-        'tenant_id' => env('AZURE_TENANT_ID'), // optional
+        'tenant' => env('AZURE_TENANT_ID', 'common'),
+        'tenant_id' => env('AZURE_TENANT_ID'),
+    ],
+
+
+    // Microsoft Graph: creates events in Outlook and invites attendees.
+    // Needs an Entra app registration with the Calendars.ReadWrite
+    // application permission (admin consent). Leave empty to use e-mail + .ics only.
+    'graph' => [
+        'tenant_id' => env('GRAPH_TENANT_ID', env('AZURE_TENANT_ID')),
+        'client_id' => env('GRAPH_CLIENT_ID', env('AZURE_CLIENT_ID')),
+        'client_secret' => env('GRAPH_CLIENT_SECRET', env('AZURE_CLIENT_SECRET')),
+        // Mailbox that owns the calendar events (shared mailbox / service account)
+        'organizer' => env('GRAPH_ORGANIZER'),
+    ],
+
+    // Incoming webhook for Microsoft Teams or Slack (both accept {"text": ...})
+    'webhook' => [
+        'url' => env('BOOKING_WEBHOOK_URL'),
     ],
 
 ];

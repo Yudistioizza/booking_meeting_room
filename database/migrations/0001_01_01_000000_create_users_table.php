@@ -47,11 +47,12 @@ return new class extends Migration
         // =========================
         // Tabel Password Resets
         // =========================
-        Schema::create('password_resets', function (Blueprint $table) {
-            $table->string('email')->index();
+        // Name and shape must match config('auth.passwords.users.table'),
+        // otherwise "Lupa kata sandi" fails with a missing-table error.
+        Schema::create('password_reset_tokens', function (Blueprint $table) {
+            $table->string('email')->primary();
             $table->string('token');
             $table->timestamp('created_at')->nullable();
-            $table->string('created_by')->nullable(); // optional audit
         });
 
         // =========================
@@ -74,7 +75,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('sessions');
-        Schema::dropIfExists('password_resets');
+        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('users');
     }
 };

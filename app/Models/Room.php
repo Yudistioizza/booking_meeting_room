@@ -17,6 +17,10 @@ class Room extends Model
         'location',
         'capacity',
         'equipment',
+        'requires_approval',
+        'max_duration_minutes',
+        'buffer_minutes',
+        'calendar_email',
         'created_by',
         'updated_by',
         'deleted_by',
@@ -27,6 +31,7 @@ class Room extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'requires_approval' => 'boolean',
         'restored_at' => 'datetime',
     ];
 

@@ -32,7 +32,7 @@ class Login extends Component
 
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
+        if (! Auth::attempt(['email' => $this->email, 'password' => $this->password, 'is_active' => true], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
@@ -42,6 +42,7 @@ class Login extends Component
 
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
+        Auth::user()->forceFill(['last_login_at' => now()])->saveQuietly();
 
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
     }

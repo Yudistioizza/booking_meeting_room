@@ -14,6 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'department',
         'sso_id',
         'is_sso',
         'is_force_change_pass',
@@ -46,6 +47,37 @@ class User extends Authenticatable
     /**
      * Relasi ke role
      */
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'created_by');
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_active !== false && $this->role?->name === config('booking.roles.admin');
+    }
+
+    /** Managers and admins can approve bookings and see reports. */
+    public function isApprover(): bool
+    {
+        return $this->is_active !== false && in_array($this->role?->name, [config('booking.roles.admin'), config('booking.roles.approver')], true);
+    }
+
+    /** Secret token behind the personal .ics subscription URL; created on first use. */
+    public function calendarToken(): string
+    {
+        if (! $this->calendar_token) {
+            $this->forceFill(['calendar_token' => \Illuminate\Support\Str::random(48)])->saveQuietly();
+        }
+
+        return $this->calendar_token;
+    }
+
     public function roles()
     {
         return $this->belongsTo(Role::class);

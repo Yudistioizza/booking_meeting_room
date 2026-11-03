@@ -1,38 +1,16 @@
-<section class="w-full">
-    @include('partials.settings-heading')
-
-    <x-settings.layout :heading="__('Update password')" :subheading="__('Ensure your account is using a long, random password to stay secure')">
-        <form method="POST" wire:submit="updatePassword" class="mt-6 space-y-6">
-            <flux:input
-                wire:model="current_password"
-                :label="__('Current password')"
-                type="password"
-                required
-                autocomplete="current-password"
-            />
-            <flux:input
-                wire:model="password"
-                :label="__('New password')"
-                type="password"
-                required
-                autocomplete="new-password"
-            />
-            <flux:input
-                wire:model="password_confirmation"
-                :label="__('Confirm Password')"
-                type="password"
-                required
-                autocomplete="new-password"
-            />
-
-            <div class="flex items-center gap-4">
-                <div class="flex items-center justify-end">
-                    <flux:button variant="primary" type="submit" class="w-full">{{ __('Save') }}</flux:button>
+<section>
+    <x-settings.layout heading="Ubah kata sandi" subheading="Gunakan kata sandi panjang dan acak. Akun SSO Microsoft tidak memakai kata sandi ini.">
+        <form wire:submit="updatePassword" class="space-y-4">
+            @foreach (['current_password' => ['Kata sandi saat ini', 'current-password'], 'password' => ['Kata sandi baru', 'new-password'], 'password_confirmation' => ['Ulangi kata sandi baru', 'new-password']] as $field => [$label, $auto])
+                <div>
+                    <label class="label" for="{{ $field }}">{{ $label }}</label>
+                    <input id="{{ $field }}" type="password" wire:model="{{ $field }}" autocomplete="{{ $auto }}" class="input @error($field) is-invalid @enderror" required>
+                    @error($field)<p class="error">{{ $message }}</p>@enderror
                 </div>
-
-                <x-action-message class="me-3" on="password-updated">
-                    {{ __('Saved.') }}
-                </x-action-message>
+            @endforeach
+            <div class="flex items-center gap-3 pt-1">
+                <button type="submit" class="btn btn-primary">Simpan</button>
+                <x-action-message class="text-sm font-medium text-brand-700" on="password-updated">Tersimpan.</x-action-message>
             </div>
         </form>
     </x-settings.layout>

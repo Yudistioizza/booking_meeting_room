@@ -25,10 +25,20 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamp('start_time');
             $table->timestamp('end_time');
-            $table->enum('status', ['pending','approved','rejected'])->default('pending');
+            // pending | approved | rejected | cancelled
+            $table->string('status', 20)->default('pending')->index();
+            $table->json('attendees')->nullable();           // external/internal guest emails
+            $table->unsignedSmallInteger('attendee_count')->default(1);
+            $table->text('cancel_reason')->nullable();
+            $table->timestamp('cancelled_at')->nullable();
+
+            // Calendar interoperability (RFC 5545)
+            $table->string('ics_uid')->unique();
+            $table->unsignedInteger('ics_sequence')->default(0);
 
             // Outlook integration
             $table->string('outlook_event_id')->nullable();
+            $table->string('external_provider', 30)->nullable(); // graph | null
             $table->boolean('outlook_invitation_sent')->default(false);
 
             // Audit trail (tanpa duplikasi created_by)
@@ -41,6 +51,9 @@ return new class extends Migration
             // Timestamps & soft delete
             $table->timestamps(); // created_at & updated_at
             $table->softDeletes(); // deleted_at
+
+            // Conflict checks always filter by room and time window
+            $table->index(['room_id', 'start_time', 'end_time']);
         });
     }
 

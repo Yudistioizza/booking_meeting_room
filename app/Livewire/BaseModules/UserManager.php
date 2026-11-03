@@ -2,213 +2,217 @@
 
 namespace App\Livewire\BaseModules;
 
-use App\Models\User;
+use App\Models\AuditLog;
 use App\Models\Role;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-use App\Traits\WithCrud;
-use App\Traits\WithFilter;
-use App\Traits\WithFlash;
-
-use App\Services\CrudService;
-use App\Services\FilterService;
-use App\Services\UserService;
-
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-
+#[Layout('components.layouts.app')]
+#[Title('Pengguna')]
 class UserManager extends Component
 {
-    use WithPagination, WithCrud, WithFilter, WithFlash;
+    use WithPagination;
 
-    /* Form fields */
+    #[Url(as: 'q')]
+    public string $search = '';
+    #[Url(as: 'peran')]
+    public string $filterRole = '';
+    #[Url(as: 'status')]
+    public string $filterStatus = '';
+
+    public bool $open = false;
+    public ?int $editId = null;
     public string $name = '';
     public string $email = '';
-    public ?string $sso_id = null;
-    public string $password = '';
-    public string $password_confirmation = '';
+    public string $department = '';
     public ?int $role_id = null;
     public bool $is_active = true;
-    public bool $isLoading = false;
+    public string $password = '';
+    public ?string $deleteId = null;
 
-    /* Dependencies */
-    private CrudService $crud;
-    private FilterService $filter;
-    private UserService $userSvc;
-
-    public string $filterStatus = 'all'; // all, active, inactive, deleted
-    public string $filterRole   = 'all'; // opsional jika pakai role juga
-
-    public function boot(
-        CrudService $crud,
-        FilterService $filter,
-        UserService $userSvc
-    ) {
-        $this->crud   = $crud;
-        $this->filter = $filter;
-        $this->userSvc= $userSvc;
+    public function updatingSearch(): void
+    {
+        $this->resetPage();
     }
 
-    /* ───────────────────────── Validation ───────────────────────── */
+    public function updatingFilterRole(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterStatus(): void
+    {
+        $this->resetPage();
+    }
+
     protected function rules(): array
     {
-        $uniqueEmail = 'unique:users,email';
-        if ($this->isEditMode) {
-            $uniqueEmail .= ',' . $this->editId;
-        }
-
         return [
-            'name'      => 'required|string|min:2|max:255',
-            'email'     => ['required', 'email', 'max:255', $uniqueEmail],
-            'role_id'   => 'required|exists:roles,id',
-            'password'  => ($this->isEditMode ? 'nullable' : 'required') . '|min:8|confirmed',
-            'is_active' => 'boolean',
-            'sso_id'    => 'nullable|string|max:255',
+            'name' => 'required|string|min:2|max:120',
+            'email' => ['required', 'email', 'max:160', Rule::unique('users', 'email')->ignore($this->editId)->whereNull('deleted_at')],
+            'department' => 'nullable|string|max:80',
+            'role_id' => 'required|exists:roles,id',
+            'password' => [$this->editId ? 'nullable' : 'nullable', 'string', 'min:10', 'max:100'],
         ];
     }
 
-    /* ───────────────────────── Traits hooks ───────────────────────── */
-    protected function findModel(int $id, bool $trashed = false)
+    protected function messages(): array
     {
-        return $trashed
-            ? User::onlyTrashed()->findOrFail($id)
-            : User::withTrashed()->findOrFail($id);
+        return ['email.unique' => 'Email sudah terdaftar.', 'password.min' => 'Kata sandi minimal 10 karakter.', 'role_id.required' => 'Pilih peran.'];
     }
 
-    protected function fillForm(int $id): void
+    public function create(): void
     {
-        $user = $this->findModel($id);
-        $this->name      = $user->name;
-        $this->email     = $user->email;
-        $this->sso_id    = $user->sso_id;
-        $this->role_id   = $user->role_id;
-        $this->is_active = $user->is_active;
+        $this->resetForm();
+        $this->role_id = Role::where('name', config('booking.roles.employee'))->value('id');
+        $this->open = true;
     }
 
-    protected function resetForm(): void
+    public function edit(int $id): void
     {
-        $this->reset([
-            'name', 'email', 'sso_id', 'password', 'password_confirmation',
-            'role_id', 'is_active'
-        ]);
+        $u = User::findOrFail($id);
+        $this->resetForm();
+        $this->editId = $u->id;
+        $this->name = $u->name;
+        $this->email = $u->email;
+        $this->department = (string) $u->department;
+        $this->role_id = $u->role_id;
+        $this->is_active = (bool) $u->is_active;
+        $this->open = true;
+    }
+
+    private function resetForm(): void
+    {
+        $this->reset(['editId', 'name', 'email', 'department', 'role_id', 'password']);
         $this->is_active = true;
-        $this->role_id   = null;
+        $this->resetValidation();
     }
 
-    /* ───────────────────────── CRUD Actions ───────────────────────── */
-    public function store()
+    public function generatePassword(): void
+    {
+        $this->password = Str::password(14, symbols: false);
+    }
+
+    public function save(): void
     {
         $this->validate();
+
+        if ($this->editId && $this->wouldRemoveLastAdmin($this->editId, $this->role_id, $this->is_active)) {
+            $this->addError('role_id', 'Harus ada minimal satu admin aktif.');
+
+            return;
+        }
+        if ($this->editId === auth()->id() && ! $this->is_active) {
+            $this->addError('email', 'Anda tidak dapat menonaktifkan akun sendiri.');
+
+            return;
+        }
+
         $data = [
-            'name'       => trim($this->name),
-            'email'      => strtolower(trim($this->email)),
-            'sso_id'     => $this->sso_id,
-            'role_id'    => $this->role_id,
-            'is_active'  => $this->is_active,
-            'password'   => Hash::make($this->password),
-            'created_by' => Auth::id(),
+            'name' => trim($this->name), 'email' => strtolower(trim($this->email)), 'department' => $this->department ?: null,
+            'role_id' => $this->role_id, 'is_active' => $this->is_active,
         ];
-        $this->crud->create(User::class, $data);
-        $this->flashSuccess('User berhasil ditambahkan!');
-        $this->cancel();
-    }
 
-    public function update()
-    {
-        $this->validate();
-        $data = [
-            'name'       => trim($this->name),
-            'email'      => strtolower(trim($this->email)),
-            'sso_id'     => $this->sso_id,
-            'role_id'    => $this->role_id,
-            'is_active'  => $this->is_active,
-            'updated_by' => Auth::id(),
-        ];
-        if ($this->password) {
-            $data['password'] = Hash::make($this->password);
+        if ($this->editId) {
+            $user = User::findOrFail($this->editId);
+            $user->update($data + ['updated_by' => auth()->user()->email] + ($this->password ? ['password' => Hash::make($this->password)] : []));
+            AuditLog::record('user.updated', $user, "Mengubah pengguna {$user->email}");
+        } else {
+            $temp = $this->password ?: null;
+            $user = User::create($data + [
+                'password' => $temp ? Hash::make($temp) : null, 'email_verified_at' => now(), 'created_by' => auth()->user()->email,
+                'is_force_change_pass' => (bool) $temp,
+            ]);
+            AuditLog::record('user.created', $user, "Menambah pengguna {$user->email}" . ($temp ? '' : ' (hanya SSO)'));
         }
-        $this->crud->update($this->editId, $data);
-        $this->flashSuccess('User berhasil diperbarui!');
-        $this->cancel();
+
+        $this->open = false;
+        $this->dispatch('toast', message: $this->editId ? 'Pengguna diperbarui.' : 'Pengguna ditambahkan.');
     }
 
-    public function confirmDelete(): void
+    public function toggle(int $id): void
     {
-        if ($this->modelToDelete?->id === auth()->id()) {
-            $this->flashError('Anda tidak dapat menghapus akun sendiri.');
+        $user = User::findOrFail($id);
+        if ($user->id === auth()->id()) {
+            $this->dispatch('toast', message: 'Anda tidak dapat menonaktifkan akun sendiri.', type: 'error');
+
             return;
         }
+        if ($user->is_active && $this->wouldRemoveLastAdmin($user->id, $user->role_id, false)) {
+            $this->dispatch('toast', message: 'Harus ada minimal satu admin aktif.', type: 'error');
 
-        $this->crud->softDelete($this->modelToDelete->id);
-        $this->flashSuccess('User berhasil dihapus.');
-        $this->cancelDelete();
-    }
-
-    public function confirmForceDelete(): void
-    {
-        if ($this->modelToForceDelete?->id === auth()->id()) {
-            $this->flashError('Anda tidak dapat menghapus akun sendiri secara permanen.');
             return;
         }
-
-        if ($this->forceDeleteConfirmation !== 'HAPUS PERMANEN') return;
-
-        $this->crud->forceDelete($this->modelToForceDelete->id);
-        $this->flashSuccess('User berhasil dihapus permanen.');
-        $this->cancelForceDelete();
+        $user->update(['is_active' => ! $user->is_active]);
+        AuditLog::record($user->is_active ? 'user.activated' : 'user.deactivated', $user, ($user->is_active ? 'Mengaktifkan' : 'Menonaktifkan') . " {$user->email}");
     }
 
-    public function restore(int $id)
+    public function confirmDelete(int $id): void
     {
-        $this->crud->restore($id);
-        $this->flashSuccess('User berhasil direstore.');
+        $this->deleteId = (string) $id;
     }
 
-    public function toggleUserStatus(int $userId): void
+    public function delete(): void
     {
-        // cegah non-aktifkan diri sendiri
-        if ($userId === auth()->id()) {
-            $this->flashError('Anda tidak dapat menonaktifkan akun sendiri.');
+        $user = User::findOrFail((int) $this->deleteId);
+        $this->deleteId = null;
+
+        if ($user->id === auth()->id()) {
+            $this->dispatch('toast', message: 'Anda tidak dapat menghapus akun sendiri.', type: 'error');
+
             return;
         }
+        if ($this->wouldRemoveLastAdmin($user->id, $user->role_id, false)) {
+            $this->dispatch('toast', message: 'Harus ada minimal satu admin aktif.', type: 'error');
 
-        $user = User::findOrFail($userId);
-        $new  = !$user->is_active;
-        $user->update(['is_active' => $new]);
+            return;
+        }
+        $future = $user->bookings()->holding()->where('end_time', '>', now())->count();
+        if ($future > 0) {
+            $this->dispatch('toast', message: "Pengguna punya {$future} booking mendatang. Batalkan dulu atau cukup nonaktifkan.", type: 'error');
 
-        $this->flashSuccess('Status user berhasil ' . ($new ? 'diaktifkan' : 'dinonaktifkan') . '.');
+            return;
+        }
+        $user->update(['deleted_by' => auth()->user()->email, 'is_active' => false]);
+        $user->delete();
+        AuditLog::record('user.deleted', $user, "Menghapus pengguna {$user->email}");
+        $this->dispatch('toast', message: 'Pengguna dihapus.');
     }
 
-    /* ───────────────────────── Render ───────────────────────── */
+    private function wouldRemoveLastAdmin(int $userId, ?int $newRole, bool $stillActive): bool
+    {
+        $adminRole = Role::where('name', config('booking.roles.admin'))->value('id');
+        $isAdmin = User::whereKey($userId)->where('role_id', $adminRole)->where('is_active', true)->exists();
+        if (! $isAdmin) {
+            return false;
+        }
+        $keeps = $newRole === $adminRole && $stillActive;
+
+        return ! $keeps && User::where('role_id', $adminRole)->where('is_active', true)->where('id', '!=', $userId)->doesntExist();
+    }
+
     public function render()
     {
-        $query = $this->userSvc->query();
-
-        // filter keyword
-        if ($this->search) {
-            $query->where(function ($q) {
-                $q->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($this->search) . '%'])
-                  ->orWhereRaw('LOWER(email) LIKE ?', ['%' . strtolower($this->search) . '%']);
-            });
-        }
-
-        // filter status
-        if ($this->filterStatus === 'active') {
-            $query->where('is_active', true)->whereNull('deleted_at');
-        } elseif ($this->filterStatus === 'inactive') {
-            $query->where('is_active', false)->whereNull('deleted_at');
-        } elseif ($this->filterStatus === 'deleted') {
-            $query->onlyTrashed();
-        }
-
-        // sorting
-        $query->orderBy($this->sortBy, $this->sortDirection);
+        $users = User::with('role')
+            ->when($this->search, fn ($q) => $q->where(fn ($w) => $w->where('name', 'like', "%{$this->search}%")->orWhere('email', 'like', "%{$this->search}%")->orWhere('department', 'like', "%{$this->search}%")))
+            ->when($this->filterRole, fn ($q) => $q->where('role_id', $this->filterRole))
+            ->when($this->filterStatus === 'active', fn ($q) => $q->where('is_active', true))
+            ->when($this->filterStatus === 'inactive', fn ($q) => $q->where('is_active', false))
+            ->orderBy('name')->paginate(12);
 
         return view('livewire.base-modules.user-manager', [
-            'users' => $query->paginate($this->perPage),
-            'stats' => $this->userSvc->stats(),
-            'roles' => Role::where('is_active', true)->orderBy('name')->get(),
+            'users' => $users,
+            'roles' => Role::orderBy('name')->get(),
+            'total' => User::count(),
+            'inactive' => User::where('is_active', false)->count(),
+            'sso' => User::where('is_sso', true)->count(),
         ]);
     }
 }
