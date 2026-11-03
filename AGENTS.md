@@ -1,6 +1,7 @@
 # AGENTS.md: booking_meeting_room ("Ruang")
 
 Panduan untuk AI agent. Baca file ini dulu, lalu `README.md` (lengkap: fitur, SSO/Outlook, email, kebijakan, keamanan, arsitektur).
+Penjelasan lengkap fungsi aplikasi: `docs/TENTANG_APLIKASI.md`.
 
 ## Ringkasan
 
@@ -44,4 +45,4 @@ Login demo (kata sandi semua `password`): `rina.kusuma@nusantara.test` (Admin), 
 
 ## Repo terkait
 
-Peta semua repo: `docs/ONBOARDING_PROMPT.md` di repo `Yudistioizza`.
+Penjelasan lengkap aplikasi: `docs/TENTANG_APLIKASI.md`. Prompt onboarding + daftar repo: `docs/ONBOARDING_PROMPT.md`.
