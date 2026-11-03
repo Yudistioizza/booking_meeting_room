@@ -41,7 +41,7 @@ Login demo (kata sandi semua `password`): `rina.kusuma@nusantara.test` (Admin), 
 - Teks UI Bahasa Indonesia. Setiap aksi penting masuk audit log.
 - Jangan jalankan `--seed` di produksi (data demo). Jangan commit `.env` atau rahasia Entra.
 - Jalankan `composer test` dan Pint sebelum menyatakan selesai.
-- Jangan push atau merge ke `main` tanpa konfirmasi pemilik; kerja di branch `redesign`.
+- Jangan push atau merge ke `main` tanpa konfirmasi pemilik.
 
 ## Repo terkait
 

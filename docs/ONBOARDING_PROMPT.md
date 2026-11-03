@@ -20,20 +20,20 @@ LANGKAH PERTAMA (wajib, sebelum menulis kode atau memberi saran)
 
 REPO
 1) skripsi_kos: Sistem manajemen rumah kos (kamar, penghuni, tagihan sewa, bukti bayar, laporan).
-   Laravel 12 + Livewire + PostgreSQL. Branch: redesign
-   Repo : https://github.com/Yudistioizza/skripsi_kos/tree/redesign
-   Clone: git clone -b redesign https://github.com/Yudistioizza/skripsi_kos.git
-   Raw  : https://raw.githubusercontent.com/Yudistioizza/skripsi_kos/redesign/AGENTS.md
-          https://raw.githubusercontent.com/Yudistioizza/skripsi_kos/redesign/docs/TENTANG_APLIKASI.md
-          https://raw.githubusercontent.com/Yudistioizza/skripsi_kos/redesign/README.md
+   Laravel 12 + Livewire + PostgreSQL. Branch: main
+   Repo : https://github.com/Yudistioizza/skripsi_kos/tree/main
+   Clone: git clone https://github.com/Yudistioizza/skripsi_kos.git
+   Raw  : https://raw.githubusercontent.com/Yudistioizza/skripsi_kos/main/AGENTS.md
+          https://raw.githubusercontent.com/Yudistioizza/skripsi_kos/main/docs/TENTANG_APLIKASI.md
+          https://raw.githubusercontent.com/Yudistioizza/skripsi_kos/main/README.md
 
 2) booking_meeting_room ("Ruang"): Booking ruang rapat enterprise (cek bentrok, persetujuan,
-   booking berulang, laporan utilisasi, SSO + kalender Outlook). Laravel 12 + Livewire. Branch: redesign
-   Repo : https://github.com/Yudistioizza/booking_meeting_room/tree/redesign
-   Clone: git clone -b redesign https://github.com/Yudistioizza/booking_meeting_room.git
-   Raw  : https://raw.githubusercontent.com/Yudistioizza/booking_meeting_room/redesign/AGENTS.md
-          https://raw.githubusercontent.com/Yudistioizza/booking_meeting_room/redesign/docs/TENTANG_APLIKASI.md
-          https://raw.githubusercontent.com/Yudistioizza/booking_meeting_room/redesign/README.md
+   booking berulang, laporan utilisasi, SSO + kalender Outlook). Laravel 12 + Livewire. Branch: main
+   Repo : https://github.com/Yudistioizza/booking_meeting_room/tree/main
+   Clone: git clone https://github.com/Yudistioizza/booking_meeting_room.git
+   Raw  : https://raw.githubusercontent.com/Yudistioizza/booking_meeting_room/main/AGENTS.md
+          https://raw.githubusercontent.com/Yudistioizza/booking_meeting_room/main/docs/TENTANG_APLIKASI.md
+          https://raw.githubusercontent.com/Yudistioizza/booking_meeting_room/main/README.md
 
 3) portal_aplikasi: Katalog aplikasi perusahaan "AppHub" (monorepo: apphub-frontend React,
    apphub-api Node/Express, apphub-admin Laravel 11). Merek fiktif, data dummy. Branch: main
