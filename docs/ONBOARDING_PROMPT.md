@@ -52,8 +52,6 @@ REPO
           https://raw.githubusercontent.com/Yudistioizza/portal_dashboard_api/main/docs/TENTANG_APLIKASI.md
           https://raw.githubusercontent.com/Yudistioizza/portal_dashboard_api/main/README.md
 
-Catatan: skripsi_kos dan booking_meeting_room memakai branch `redesign` (perbaikan belum di-merge
-ke main). Jika URL branch tidak ditemukan, coba `main`.
 
 ATURAN UMUM (semua repo)
 - Jangan push, merge ke main, deploy, atau membuat/menghapus repo tanpa konfirmasi eksplisit.
@@ -75,4 +73,3 @@ Setelah langkah pertama selesai, tunggu tugas dari pemilik.
 ## Catatan untuk pemilik
 
 - Ubah visibilitas ke public: GitHub, Settings, General, Danger Zone, Change visibility.
-- Setelah `redesign` di-merge ke `main`, ganti `redesign` menjadi `main` pada prompt.
